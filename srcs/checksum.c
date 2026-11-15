@@ -1,6 +1,6 @@
 #include "ft_ping.h"
 
-unsigned short	checksum(const void *data, size_t len)
+unsigned short	ft_checksum(const void *data, size_t len)
 {
 	const unsigned short	*w = data;
 	unsigned long			sum = 0;

@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include "ft_ping.h"
 
-int	resolve_target(t_ping *p)
+int	ft_resolve_target(t_ping *p)
 {
 	struct addrinfo	hints;
 	struct addrinfo	*res;

@@ -2,7 +2,7 @@
 #include <math.h>
 #include "ft_ping.h"
 
-void	stats_init(t_ping *p)
+void	ft_stats_init(t_ping *p)
 {
 	p->rtt_min = 0;
 	p->rtt_max = 0;
@@ -10,7 +10,7 @@ void	stats_init(t_ping *p)
 	p->rtt_sum_sq = 0;
 }
 
-void	stats_add_rtt(t_ping *p, double rtt_ms)
+void	ft_stats_add_rtt(t_ping *p, double rtt_ms)
 {
 	if (p->received == 0 || rtt_ms < p->rtt_min)
 		p->rtt_min = rtt_ms;
@@ -21,7 +21,7 @@ void	stats_add_rtt(t_ping *p, double rtt_ms)
 	p->received++;
 }
 
-void	print_stats(const t_ping *p)
+void	ft_print_stats(const t_ping *p)
 {
 	double	loss = p->sent ? 100.0 * (p->sent - p->received) / p->sent : 0;
 	double	avg;

@@ -5,7 +5,7 @@
 #include <netinet/ip.h>
 #include "ft_ping.h"
 
-int	open_socket(t_ping *p)
+int	ft_open_socket(t_ping *p)
 {
 	struct timeval	tv = {1, 0};
 

@@ -34,33 +34,33 @@ typedef struct s_ping
 extern volatile sig_atomic_t	g_stop;
 
 /* args.c */
-int				parse_args(t_ping *p, int argc, char **argv);
-void			print_usage(const char *prog);
+int				ft_parse_args(t_ping *p, int argc, char **argv);
+void			ft_print_usage(const char *prog);
 
 /* resolve.c */
-int				resolve_target(t_ping *p);
+int				ft_resolve_target(t_ping *p);
 
 /* socket.c */
-int				open_socket(t_ping *p);
+int				ft_open_socket(t_ping *p);
 
 /* packet.c */
-size_t			build_packet(t_ping *p, unsigned char *buf);
-int				parse_reply(t_ping *p, unsigned char *buf, ssize_t len);
+size_t			ft_build_packet(t_ping *p, unsigned char *buf);
+int				ft_parse_reply(t_ping *p, unsigned char *buf, ssize_t len);
 
 /* checksum.c */
-unsigned short	checksum(const void *data, size_t len);
+unsigned short	ft_checksum(const void *data, size_t len);
 
 /* loop.c */
-int				ping_loop(t_ping *p);
+int				ft_ping_loop(t_ping *p);
 
 /* stats.c */
-void			stats_init(t_ping *p);
-void			stats_add_rtt(t_ping *p, double rtt_ms);
-void			print_stats(const t_ping *p);
+void			ft_stats_init(t_ping *p);
+void			ft_stats_add_rtt(t_ping *p, double rtt_ms);
+void			ft_print_stats(const t_ping *p);
 
 /* utils.c */
-void			handle_sigint(int sig);
-int				setup_signals(void);
-double			timeval_diff_ms(const struct timeval *a, const struct timeval *b);
+void			ft_handle_sigint(int sig);
+int				ft_setup_signals(void);
+double			ft_timeval_diff_ms(const struct timeval *a, const struct timeval *b);
 
 #endif

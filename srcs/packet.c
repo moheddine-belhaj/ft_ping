@@ -3,7 +3,7 @@
 #include "ft_ping.h"
 
 /* TODO: fill ICMP echo request (type 8, id, seq, timestamp, checksum). */
-size_t	build_packet(t_ping *p, unsigned char *buf)
+size_t	ft_build_packet(t_ping *p, unsigned char *buf)
 {
 	(void)p;
 	(void)buf;
@@ -11,7 +11,7 @@ size_t	build_packet(t_ping *p, unsigned char *buf)
 }
 
 /* TODO: validate IP + ICMP headers, match id, print line / ICMP error. */
-int	parse_reply(t_ping *p, unsigned char *buf, ssize_t len)
+int	ft_parse_reply(t_ping *p, unsigned char *buf, ssize_t len)
 {
 	(void)p;
 	(void)buf;

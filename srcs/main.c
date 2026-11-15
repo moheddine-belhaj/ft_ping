@@ -12,17 +12,17 @@ int	main(int argc, char **argv)
 	p.ttl = PING_TTL_DEFAULT;
 	p.id = getpid();
 	p.sockfd = -1;
-	if (parse_args(&p, argc, argv) != 0)
+	if (ft_parse_args(&p, argc, argv) != 0)
 		return (64);
-	if (resolve_target(&p) != 0)
+	if (ft_resolve_target(&p) != 0)
 		return (1);
-	if (open_socket(&p) != 0)
+	if (ft_open_socket(&p) != 0)
 		return (1);
-	if (setup_signals() != 0)
+	if (ft_setup_signals() != 0)
 		return (1);
-	stats_init(&p);
-	ping_loop(&p);
-	print_stats(&p);
+	ft_stats_init(&p);
+	ft_ping_loop(&p);
+	ft_print_stats(&p);
 	close(p.sockfd);
 	return (p.received > 0 ? 0 : 1);
 }

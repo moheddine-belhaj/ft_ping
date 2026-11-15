@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "ft_ping.h"
 
-void	print_usage(const char *prog)
+void	ft_print_usage(const char *prog)
 {
 	printf("Usage: %s [OPTION...] HOST ...\n", prog);
 	printf("Send ICMP ECHO_REQUEST packets to network hosts.\n\n");
@@ -11,7 +11,7 @@ void	print_usage(const char *prog)
 	printf("  -?, --help                 give this help list\n");
 }
 
-int	parse_args(t_ping *p, int argc, char **argv)
+int	ft_parse_args(t_ping *p, int argc, char **argv)
 {
 	int	i;
 
@@ -22,7 +22,7 @@ int	parse_args(t_ping *p, int argc, char **argv)
 			if (!strcmp(argv[i], "-v"))
 				p->verbose = 1;
 			else if (!strcmp(argv[i], "-?"))
-				return (print_usage(argv[0]), exit(0), 0);
+				return (ft_print_usage(argv[0]), exit(0), 0);
 			else
 			{
 				fprintf(stderr, "%s: invalid option -- '%s'\n", argv[0], argv[i] + 1);
