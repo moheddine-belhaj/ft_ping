@@ -9,6 +9,9 @@
 # define PING_DATA_LEN   56
 # define PING_INTERVAL   1
 # define PING_TTL_DEFAULT 64
+# define PING_ICMP_HDR_LEN 8
+# define PING_PACKET_LEN (PING_ICMP_HDR_LEN + PING_DATA_LEN)
+# define PING_RECV_BUF  1500
 
 typedef struct s_ping
 {

@@ -27,7 +27,7 @@ void	ft_print_stats(const t_ping *p)
 	double	avg;
 	double	var;
 
-	printf("--- %s ping statistics ---\n", p->target);
+	printf("\n--- %s ping statistics ---\n", p->target);
 	printf("%lu packets transmitted, %lu packets received, %.0f%% packet loss\n",
 		p->sent, p->received, loss);
 	if (p->received > 0)
