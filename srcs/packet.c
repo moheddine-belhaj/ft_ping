@@ -30,6 +30,22 @@ size_t	ft_build_packet(t_ping *p, unsigned char *buf)
 	return (PING_PACKET_LEN);
 }
 
+/* Echo reply for us: compute RTT from the embedded timestamp and print it. */
+static void	ft_print_reply(t_ping *p, const struct iphdr *ip,
+	const struct icmphdr *icmp, size_t icmp_len)
+{
+	struct timeval	sent;
+	struct timeval	now;
+	double			rtt;
+
+	memcpy(&sent, (const unsigned char *)icmp + PING_ICMP_HDR_LEN, sizeof(sent));
+	gettimeofday(&now, NULL);
+	rtt = ft_timeval_diff_ms(&now, &sent);
+	ft_stats_add_rtt(p, rtt);
+	printf("%zu bytes from %s: icmp_seq=%u ttl=%d time=%.3f ms\n",
+		icmp_len, p->ip_str, ntohs(icmp->un.echo.sequence), ip->ttl, rtt);
+}
+
 /*
 ** Validate a received datagram (IP header + ICMP).
 ** Returns 1 if it was an echo reply for us (and prints its line), 0 otherwise.
@@ -38,11 +54,8 @@ int	ft_parse_reply(t_ping *p, unsigned char *buf, ssize_t len)
 {
 	struct iphdr	*ip = (struct iphdr *)buf;
 	struct icmphdr	*icmp;
-	struct timeval	sent;
-	struct timeval	now;
 	size_t			iphl;
 	size_t			icmp_len;
-	double			rtt;
 
 	if (len < (ssize_t)sizeof(struct iphdr))
 		return (0);
@@ -53,16 +66,11 @@ int	ft_parse_reply(t_ping *p, unsigned char *buf, ssize_t len)
 	icmp_len = len - iphl;
 	if (ft_checksum(icmp, icmp_len) != 0)
 		return (0);
-	if (icmp->type != ICMP_ECHOREPLY
-		|| ntohs(icmp->un.echo.id) != (unsigned short)p->id)
+	if (icmp->type != ICMP_ECHOREPLY)
+		return (ft_handle_error(p, ip, icmp, icmp_len));
+	if (ntohs(icmp->un.echo.id) != (unsigned short)p->id
+		|| icmp_len < PING_ICMP_HDR_LEN + sizeof(struct timeval))
 		return (0);
-	if (icmp_len < PING_ICMP_HDR_LEN + sizeof(sent))
-		return (0);
-	memcpy(&sent, (unsigned char *)icmp + PING_ICMP_HDR_LEN, sizeof(sent));
-	gettimeofday(&now, NULL);
-	rtt = ft_timeval_diff_ms(&now, &sent);
-	ft_stats_add_rtt(p, rtt);
-	printf("%zu bytes from %s: icmp_seq=%u ttl=%d time=%.3f ms\n",
-		icmp_len, p->ip_str, ntohs(icmp->un.echo.sequence), ip->ttl, rtt);
+	ft_print_reply(p, ip, icmp, icmp_len);
 	return (1);
 }

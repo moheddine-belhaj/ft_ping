@@ -2,6 +2,8 @@
 # define FT_PING_H
 
 # include <netinet/in.h>
+# include <netinet/ip.h>
+# include <netinet/ip_icmp.h>
 # include <signal.h>
 # include <stddef.h>
 # include <sys/time.h>
@@ -49,6 +51,10 @@ int				ft_open_socket(t_ping *p);
 /* packet.c */
 size_t			ft_build_packet(t_ping *p, unsigned char *buf);
 int				ft_parse_reply(t_ping *p, unsigned char *buf, ssize_t len);
+
+/* icmp_error.c */
+int				ft_handle_error(t_ping *p, const struct iphdr *ip,
+					const struct icmphdr *icmp, size_t icmp_len);
 
 /* checksum.c */
 unsigned short	ft_checksum(const void *data, size_t len);
