@@ -12,7 +12,10 @@ int	ft_open_socket(t_ping *p)
 	p->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (p->sockfd < 0)
 	{
-		fprintf(stderr, "%s: socket: %s\n", p->prog, strerror(errno));
+		if (errno == EPERM || errno == EACCES)
+			fprintf(stderr, "%s: Lacking privilege for raw socket.\n", p->prog);
+		else
+			fprintf(stderr, "%s: socket: %s\n", p->prog, strerror(errno));
 		return (-1);
 	}
 	if (setsockopt(p->sockfd, IPPROTO_IP, IP_TTL, &p->ttl, sizeof(p->ttl)) < 0

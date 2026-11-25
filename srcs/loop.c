@@ -12,14 +12,15 @@ static int	ft_send_echo(t_ping *p)
 	size_t			len;
 
 	len = ft_build_packet(p, pkt);
+	p->seq++;
 	if (sendto(p->sockfd, pkt, len, 0,
 			(struct sockaddr *)&p->dest, sizeof(p->dest)) < 0)
 	{
+		fflush(stdout);
 		fprintf(stderr, "%s: sending packet: %s\n", p->prog, strerror(errno));
 		return (-1);
 	}
 	p->sent++;
-	p->seq++;
 	return (0);
 }
 
@@ -51,13 +52,15 @@ int	ft_ping_loop(t_ping *p)
 	struct timeval	deadline;
 
 	gettimeofday(&p->start, NULL);
-	printf("PING %s (%s): %d data bytes\n", p->target, p->ip_str, PING_DATA_LEN);
+	printf("PING %s (%s): %d data bytes", p->target, p->ip_str, PING_DATA_LEN);
+	if (p->verbose)
+		printf(", id 0x%04x = %u", (unsigned short)p->id, (unsigned short)p->id);
+	printf("\n");
 	while (!g_stop)
 	{
 		gettimeofday(&deadline, NULL);
 		deadline.tv_sec += PING_INTERVAL;
-		if (ft_send_echo(p) != 0)
-			return (-1);
+		ft_send_echo(p);
 		ft_wait_replies(p, &deadline);
 	}
 	return (0);

@@ -2,27 +2,43 @@
 #include <unistd.h>
 #include "ft_ping.h"
 
+#define EXIT_NOHOST 68
+
 volatile sig_atomic_t	g_stop = 0;
+
+/* Ping one host; returns the exit status for it. */
+static int	ft_ping_host(t_ping *p, const char *host)
+{
+	p->target = host;
+	p->sent = 0;
+	p->received = 0;
+	p->seq = 0;
+	if (ft_resolve_target(p) != 0)
+		return (EXIT_NOHOST);
+	ft_stats_init(p);
+	ft_ping_loop(p);
+	ft_print_stats(p);
+	return (p->received > 0 ? 0 : 1);
+}
 
 int	main(int argc, char **argv)
 {
 	t_ping	p = {0};
+	int		status = 0;
+	int		i;
 
-	p.prog = argv[0];
+	p.prog = ft_prog_name(argv[0]);
 	p.ttl = PING_TTL_DEFAULT;
 	p.id = getpid();
 	p.sockfd = -1;
 	if (ft_parse_args(&p, argc, argv) != 0)
 		return (64);
-	if (ft_resolve_target(&p) != 0)
-		return (1);
 	if (ft_open_socket(&p) != 0)
 		return (1);
 	if (ft_setup_signals() != 0)
 		return (1);
-	ft_stats_init(&p);
-	ft_ping_loop(&p);
-	ft_print_stats(&p);
+	for (i = 0; i < p.nhosts && !g_stop; i++)
+		status = ft_ping_host(&p, p.hosts[i]);
 	close(p.sockfd);
-	return (p.received > 0 ? 0 : 1);
+	return (status);
 }
