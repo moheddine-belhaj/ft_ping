@@ -1,0 +1,6 @@
+
+- Introduced support for multiple hosts in argument parsing.
+- Added short usage message option.
+- Improved error handling for missing host operands and invalid options.
+- Updated the main loop to handle multiple hosts.
+- Enhanced socket error messages for better clarity.

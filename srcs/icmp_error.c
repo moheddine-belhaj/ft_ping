@@ -36,7 +36,7 @@ static void	ft_dump_inner(const struct iphdr *in, const struct icmphdr *inner,
 	printf("IP Hdr Dump:\n ");
 	for (i = 0; i < sizeof(*in); i++)
 		printf("%02x%s", raw[i], (i % 2) ? " " : "");
-	printf("\nVr HL TOS  Len   ID Flg  off TTL Pro  cks      Src      Dst Data\n");
+	printf("\nVr HL TOS  Len   ID Flg  off TTL Pro  cks      Src\tDst\tData\n");
 	printf(" %1x  %1x  %02x %04x %04x", in->version, in->ihl, in->tos,
 		ntohs(in->tot_len), ntohs(in->id));
 	printf("   %1x %04x", (ntohs(in->frag_off) & 0xe000) >> 13,

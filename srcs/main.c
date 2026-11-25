@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "ft_ping.h"
 
-#define EXIT_NOHOST 68
+#define EXIT_NOHOST 1
 
 volatile sig_atomic_t	g_stop = 0;
 
