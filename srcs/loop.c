@@ -8,7 +8,7 @@
 
 static int	ft_send_echo(t_ping *p)
 {
-	unsigned char	pkt[PING_PACKET_LEN] __attribute__((aligned(8)));
+	unsigned char	pkt[PING_MAX_PACKET] __attribute__((aligned(8)));
 	size_t			len;
 
 	len = ft_build_packet(p, pkt);
@@ -24,8 +24,12 @@ static int	ft_send_echo(t_ping *p)
 	return (0);
 }
 
-/* Wait up to the next send time, handling any datagram that arrives. */
-static void	ft_wait_replies(t_ping *p, const struct timeval *deadline)
+/*
+** Wait until deadline (or end, if set and earlier), handling any datagram that
+** arrives. Returns 1 if the -w time limit was reached.
+*/
+static int	ft_wait_replies(t_ping *p, const struct timeval *deadline,
+	const struct timeval *end)
 {
 	unsigned char	buf[PING_RECV_BUF] __attribute__((aligned(8)));
 	struct pollfd	pfd = {p->sockfd, POLLIN, 0};
@@ -37,22 +41,29 @@ static void	ft_wait_replies(t_ping *p, const struct timeval *deadline)
 	{
 		gettimeofday(&now, NULL);
 		left = ft_timeval_diff_ms(deadline, &now);
+		if (end && ft_timeval_diff_ms(end, &now) < left)
+			left = ft_timeval_diff_ms(end, &now);
 		if (left <= 0)
-			return ;
+			return (end && ft_timeval_diff_ms(end, &now) <= 0);
 		if (poll(&pfd, 1, (int)left + 1) <= 0)
 			continue ;
 		n = recvfrom(p->sockfd, buf, sizeof(buf), 0, NULL, NULL);
 		if (n > 0)
 			ft_parse_reply(p, buf, n);
 	}
+	return (0);
 }
 
+/* -w N: like inetutils, packets go out at 0..N seconds, then the stats. */
 int	ft_ping_loop(t_ping *p)
 {
 	struct timeval	deadline;
+	struct timeval	end;
 
 	gettimeofday(&p->start, NULL);
-	printf("PING %s (%s): %d data bytes", p->target, p->ip_str, PING_DATA_LEN);
+	end = p->start;
+	end.tv_sec += p->timeout;
+	printf("PING %s (%s): %d data bytes", p->target, p->ip_str, p->size);
 	if (p->verbose)
 		printf(", id 0x%04x = %u", (unsigned short)p->id, (unsigned short)p->id);
 	printf("\n");
@@ -61,7 +72,11 @@ int	ft_ping_loop(t_ping *p)
 		gettimeofday(&deadline, NULL);
 		deadline.tv_sec += PING_INTERVAL;
 		ft_send_echo(p);
-		ft_wait_replies(p, &deadline);
+		if (ft_wait_replies(p, &deadline, p->timeout ? &end : NULL))
+		{
+			ft_send_echo(p);
+			break ;
+		}
 	}
 	while (!g_stop);
 	return (0);

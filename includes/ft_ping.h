@@ -13,7 +13,9 @@
 # define PING_TTL_DEFAULT 64
 # define PING_ICMP_HDR_LEN 8
 # define PING_PACKET_LEN (PING_ICMP_HDR_LEN + PING_DATA_LEN)
-# define PING_RECV_BUF  1500
+# define PING_MAX_DATA  65399
+# define PING_MAX_PACKET 65536
+# define PING_RECV_BUF  65536
 
 typedef struct s_ping
 {
@@ -26,11 +28,16 @@ typedef struct s_ping
 	int					sockfd;
 	int					verbose;
 	int					ttl;
+	int					size;        /* ICMP data bytes (-s) */
+	int					timeout;     /* -w: stop after N seconds, 0 = never */
+	int					linger;      /* -W: accepted, only matters with a packet count */
+	int					numeric;     /* -n: accepted, we never reverse-resolve */
 	pid_t				id;          /* ICMP identifier (pid) */
 	unsigned short		seq;
 	/* statistics */
 	unsigned long		sent;
 	unsigned long		received;
+	unsigned long		rtt_count;   /* replies that carried a timestamp */
 	double				rtt_min;
 	double				rtt_max;
 	double				rtt_sum;
