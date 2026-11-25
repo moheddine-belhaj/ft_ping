@@ -56,12 +56,13 @@ int	ft_ping_loop(t_ping *p)
 	if (p->verbose)
 		printf(", id 0x%04x = %u", (unsigned short)p->id, (unsigned short)p->id);
 	printf("\n");
-	while (!g_stop)
+	do
 	{
 		gettimeofday(&deadline, NULL);
 		deadline.tv_sec += PING_INTERVAL;
 		ft_send_echo(p);
 		ft_wait_replies(p, &deadline);
 	}
+	while (!g_stop);
 	return (0);
 }

@@ -36,6 +36,7 @@ static void	ft_print_reply(t_ping *p, const struct iphdr *ip,
 {
 	struct timeval	sent;
 	struct timeval	now;
+	struct in_addr	src = {ip->saddr};
 	double			rtt;
 
 	memcpy(&sent, (const unsigned char *)icmp + PING_ICMP_HDR_LEN, sizeof(sent));
@@ -43,7 +44,7 @@ static void	ft_print_reply(t_ping *p, const struct iphdr *ip,
 	rtt = ft_timeval_diff_ms(&now, &sent);
 	ft_stats_add_rtt(p, rtt);
 	printf("%zu bytes from %s: icmp_seq=%u ttl=%d time=%.3f ms\n",
-		icmp_len, p->ip_str, ntohs(icmp->un.echo.sequence), ip->ttl, rtt);
+		icmp_len, inet_ntoa(src), ntohs(icmp->un.echo.sequence), ip->ttl, rtt);
 }
 
 /*

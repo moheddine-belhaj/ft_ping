@@ -5,7 +5,7 @@ INCLUDES  := -Iincludes
 SRC_DIR   := srcs
 OBJ_DIR   := objs
 
-SRCS      := main.c args.c resolve.c socket.c packet.c icmp_error.c checksum.c loop.c stats.c utils.c
+SRCS      := main.c args.c resolve.c socket.c packet.c icmp_error.c checksum.c loop.c stats.c utils.c usage.c
 OBJS      := $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.o))
 DEPS      := $(OBJS:.o=.d)
 

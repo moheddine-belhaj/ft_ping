@@ -3,21 +3,7 @@
 #include <stdlib.h>
 #include "ft_ping.h"
 
-void	ft_print_usage(const char *prog)
-{
-	printf("Usage: %s [OPTION...] HOST ...\n", prog);
-	printf("Send ICMP ECHO_REQUEST packets to network hosts.\n\n");
-	printf("  -v, --verbose              verbose output\n");
-	printf("      --ttl=N                specify N as time-to-live (1-255)\n");
-	printf("  -?, --help                 give this help list\n");
-	printf("      --usage                give a short usage message\n");
-}
-
-static void	ft_print_short_usage(const char *prog)
-{
-	printf("Usage: %s [-v?] [--ttl=N] [--verbose] [--help] [--usage] HOST ...\n",
-		prog);
-}
+#define EXIT_USAGE 64
 
 static int	ft_bad_option(const char *prog, const char *fmt, const char *arg)
 {
@@ -25,7 +11,7 @@ static int	ft_bad_option(const char *prog, const char *fmt, const char *arg)
 	fprintf(stderr, fmt, arg);
 	fprintf(stderr, "Try '%s --help' or '%s --usage' for more information.\n",
 		prog, prog);
-	return (-1);
+	return (-EXIT_USAGE);
 }
 
 /* --ttl N or --ttl=N */
@@ -33,21 +19,24 @@ static int	ft_parse_ttl(t_ping *p, char **argv, int *i)
 {
 	const char	*val = NULL;
 	char		*end;
-	long		n;
+	unsigned long	n;
 
 	if (argv[*i][5] == '=')
 		val = argv[*i] + 6;
 	else if (argv[*i + 1])
 		val = argv[++(*i)];
-	if (!val || !*val)
+	if (!val)
 		return (ft_bad_option(p->prog, "option '--ttl' requires an argument\n",
 				""));
-	n = strtol(val, &end, 10);
-	if (*end || n < 1 || n > 255)
-	{
+	n = strtoul(val, &end, 10);
+	if (*end)
 		fprintf(stderr, "%s: invalid value (`%s' near `%s')\n", p->prog, val, end);
+	else if (n < 1)
+		fprintf(stderr, "%s: option value too small: %s\n", p->prog, val);
+	else if (n > 255)
+		fprintf(stderr, "%s: option value too big: %s\n", p->prog, val);
+	if (*end || n < 1 || n > 255)
 		return (-1);
-	}
 	p->ttl = (int)n;
 	return (0);
 }
@@ -128,11 +117,11 @@ int	ft_parse_args(t_ping *p, int argc, char **argv)
 		}
 		ret = ft_parse_one(p, argv, &i, opts);
 		if (ret < 0)
-			return (-1);
+			return (-ret);
 		if (ret > 0)
 			p->hosts[p->nhosts++] = argv[i];
 	}
 	if (!p->nhosts)
-		return (ft_bad_option(p->prog, "missing host operand\n", ""));
+		return (-ft_bad_option(p->prog, "missing host operand\n", ""));
 	return (0);
 }

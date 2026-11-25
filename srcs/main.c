@@ -2,8 +2,6 @@
 #include <unistd.h>
 #include "ft_ping.h"
 
-#define EXIT_NOHOST 1
-
 volatile sig_atomic_t	g_stop = 0;
 
 /* Ping one host; returns the exit status for it. */
@@ -14,7 +12,7 @@ static int	ft_ping_host(t_ping *p, const char *host)
 	p->received = 0;
 	p->seq = 0;
 	if (ft_resolve_target(p) != 0)
-		return (EXIT_NOHOST);
+		return (-1);
 	ft_stats_init(p);
 	ft_ping_loop(p);
 	ft_print_stats(p);
@@ -31,14 +29,19 @@ int	main(int argc, char **argv)
 	p.ttl = PING_TTL_DEFAULT;
 	p.id = getpid();
 	p.sockfd = -1;
-	if (ft_parse_args(&p, argc, argv) != 0)
-		return (64);
+	status = ft_parse_args(&p, argc, argv);
+	if (status != 0)
+		return (status);
 	if (ft_open_socket(&p) != 0)
 		return (1);
 	if (ft_setup_signals() != 0)
 		return (1);
-	for (i = 0; i < p.nhosts && !g_stop; i++)
+	for (i = 0; i < p.nhosts; i++)
+	{
 		status = ft_ping_host(&p, p.hosts[i]);
+		if (status < 0)
+			break ;
+	}
 	close(p.sockfd);
-	return (status);
+	return (status < 0 ? 1 : status);
 }

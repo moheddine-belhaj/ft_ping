@@ -40,9 +40,10 @@ typedef struct s_ping
 
 extern volatile sig_atomic_t	g_stop;
 
-/* args.c */
+/* args.c, usage.c */
 int				ft_parse_args(t_ping *p, int argc, char **argv);
 void			ft_print_usage(const char *prog);
+void			ft_print_short_usage(const char *prog);
 
 /* utils.c */
 const char		*ft_prog_name(const char *argv0);
