@@ -21,3 +21,10 @@ double	ft_timeval_diff_ms(const struct timeval *a, const struct timeval *b)
 {
 	return ((a->tv_sec - b->tv_sec) * 1000.0 + (a->tv_usec - b->tv_usec) / 1000.0);
 }
+
+const char	*ft_prog_name(const char *argv0)
+{
+	const char	*slash = strrchr(argv0, '/');
+
+	return (slash ? slash + 1 : argv0);
+}

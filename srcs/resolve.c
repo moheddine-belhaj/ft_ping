@@ -14,7 +14,7 @@ int	ft_resolve_target(t_ping *p)
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_RAW;
 	hints.ai_protocol = IPPROTO_ICMP;
-	if (getaddrinfo(p->target, NULL, &hints, &res) != 0)
+	if (getaddrinfo(p->target, NULL, &hints, &res) != 0 || !res)
 	{
 		fprintf(stderr, "%s: unknown host\n", p->prog);
 		return (-1);

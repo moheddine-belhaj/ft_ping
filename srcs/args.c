@@ -1,82 +1,248 @@
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "ft_ping.h"
 
-void	ft_print_usage(const char *prog)
+#define EXIT_USAGE 64
+
+typedef enum e_opt_id
 {
-	printf("Usage: %s [OPTION...] HOST ...\n", prog);
-	printf("Send ICMP ECHO_REQUEST packets to network hosts.\n\n");
-	printf("  -v, --verbose              verbose output\n");
-	printf("      --ttl=N                specify N as time-to-live (1-255)\n");
-	printf("  -?, --help                 give this help list\n");
+	OPT_VERBOSE, OPT_HELP, OPT_USAGE, OPT_TTL, OPT_NUMERIC,
+	OPT_TIMEOUT, OPT_LINGER, OPT_SIZE, OPT_TOS, OPT_PATTERN, OPT_ROUTING, OPT_PRELOAD
+}	t_opt_id;
+
+typedef struct s_opt
+{
+	const char	*name;		/* long name, without the leading -- */
+	char		letter;		/* short name, 0 if none */
+	int			has_arg;
+	t_opt_id	id;
+}	t_opt;
+
+static const t_opt	g_opts[] = {
+	{"verbose", 'v', 0, OPT_VERBOSE},
+	{"help", '?', 0, OPT_HELP},
+	{"usage", 0, 0, OPT_USAGE},
+	{"ttl", 0, 1, OPT_TTL},
+	{"numeric", 'n', 0, OPT_NUMERIC},
+	{"timeout", 'w', 1, OPT_TIMEOUT},
+	{"linger", 'W', 1, OPT_LINGER},
+	{"size", 's', 1, OPT_SIZE},
+	{"tos", 'T', 1, OPT_TOS},
+	{"pattern", 'p', 1, OPT_PATTERN},
+	{"ignore-routing", 'r', 0, OPT_ROUTING},
+	{"preload", 'l', 1, OPT_PRELOAD},
+	{NULL, 0, 0, 0}
+};
+
+static int	ft_bad_option(const char *prog, const char *fmt, const char *arg)
+{
+	fprintf(stderr, "%s: ", prog);
+	fprintf(stderr, fmt, arg);
+	fprintf(stderr, "Try '%s --help' or '%s --usage' for more information.\n",
+		prog, prog);
+	return (-EXIT_USAGE);
 }
 
-/* --ttl N or --ttl=N */
-static int	ft_parse_ttl(t_ping *p, char **argv, int *i)
+/* Numeric argument in [min, max]; same messages as inetutils. -1 on error. */
+static int	ft_parse_num(const t_ping *p, const char *val, unsigned long max,
+	unsigned long min)
 {
-	const char	*val = NULL;
-	char		*end;
-	long		n;
+	unsigned long	n;
+	char			*end;
 
-	if (argv[*i][5] == '=')
-		val = argv[*i] + 6;
-	else if (argv[*i][5] == '\0' && argv[*i + 1])
-		val = argv[++(*i)];
-	if (!val || !*val)
-	{
-		fprintf(stderr, "%s: option '--ttl' requires an argument\n", argv[0]);
+	n = strtoul(val, &end, 0);
+	if (*end)
+		fprintf(stderr, "%s: invalid value (`%s' near `%s')\n", p->prog, val, end);
+	else if (n < min)
+		fprintf(stderr, "%s: option value too small: %s\n", p->prog, val);
+	else if (n > max)
+		fprintf(stderr, "%s: option value too big: %s\n", p->prog, val);
+	if (*end || n < min || n > max)
 		return (-1);
-	}
-	n = strtol(val, &end, 10);
-	if (*end || n < 1 || n > 255)
-	{
-		fprintf(stderr, "%s: invalid value (`%s' near `%s')\n", argv[0], val, end);
+	return ((int)n);
+}
+
+static int	ft_set_num(t_ping *p, t_opt_id id, const char *val)
+{
+	int	n;
+
+	if (id == OPT_TTL)
+		n = ft_parse_num(p, val, 255, 1);
+	else if (id == OPT_SIZE)
+		n = ft_parse_num(p, val, PING_MAX_DATA, 0);
+	else if (id == OPT_TOS)
+		n = ft_parse_num(p, val, 255, 0);
+	else
+		n = ft_parse_num(p, val, INT_MAX, 1);
+	if (n < 0)
 		return (-1);
-	}
-	p->ttl = (int)n;
+	if (id == OPT_TTL)
+		p->ttl = n;
+	else if (id == OPT_SIZE)
+		p->size = n;
+	else if (id == OPT_TOS)
+		p->tos = n;
+	else if (id == OPT_TIMEOUT)
+		p->timeout = n;
+	else
+		p->linger = n;
 	return (0);
 }
 
-static int	ft_parse_option(t_ping *p, char **argv, int *i)
+/* -p: up to 16 hex bytes, read like inetutils does (sscanf "%2x"). */
+static int	ft_set_pattern(t_ping *p, const char *text)
 {
-	if (!strcmp(argv[*i], "-v"))
-		p->verbose = 1;
-	else if (!strncmp(argv[*i], "--ttl", 5))
-		return (ft_parse_ttl(p, argv, i));
-	else if (!strcmp(argv[*i], "-?"))
+	unsigned int	c;
+	int				off;
+	int				i;
+
+	for (i = 0; *text && i < PING_PATTERN_MAX; i++)
 	{
-		ft_print_usage(argv[0]);
+		if (sscanf(text, "%2x%n", &c, &off) != 1)
+		{
+			fprintf(stderr, "%s: error in pattern near %s\n", p->prog, text);
+			return (-1);
+		}
+		text += off;
+		p->pattern[i] = (unsigned char)c;
+	}
+	p->pattern_len = i;
+	p->has_pattern = 1;
+	return (0);
+}
+
+/* -l: packets to send before the normal one-per-second mode, 0..INT_MAX. */
+static int	ft_set_preload(t_ping *p, const char *val)
+{
+	unsigned long	n;
+	char			*end;
+
+	n = strtoul(val, &end, 0);
+	if (*end || n > INT_MAX)
+	{
+		fprintf(stderr, "%s: invalid preload value (%s)\n", p->prog, val);
+		return (-1);
+	}
+	p->preload = (int)n;
+	return (0);
+}
+
+/* Applies one parsed option; val is NULL for options without argument. */
+static int	ft_apply(t_ping *p, t_opt_id id, const char *val)
+{
+	if (id == OPT_VERBOSE)
+		p->verbose = 1;
+	else if (id == OPT_NUMERIC)
+		p->numeric = 1;
+	else if (id == OPT_ROUTING)
+		p->dontroute = 1;
+	else if (id == OPT_PRELOAD)
+		return (ft_set_preload(p, val));
+	else if (id == OPT_HELP || id == OPT_USAGE)
+	{
+		if (id == OPT_HELP)
+			ft_print_usage(p->prog);
+		else
+			ft_print_short_usage(p->prog);
 		exit(0);
 	}
+	else if (id == OPT_PATTERN)
+		return (ft_set_pattern(p, val));
 	else
+		return (ft_set_num(p, id, val));
+	return (0);
+}
+
+/* --name, --name=value or --name value */
+static int	ft_parse_long(t_ping *p, char **argv, int *i)
+{
+	const char	*a = argv[*i] + 2;
+	size_t		len = strcspn(a, "=");
+	const char	*val = a[len] ? a + len + 1 : NULL;
+	const t_opt	*o;
+
+	for (o = g_opts; o->name; o++)
+		if (strlen(o->name) == len && !strncmp(o->name, a, len))
+			break ;
+	if (!o->name)
+		return (ft_bad_option(p->prog, "unrecognized option '%s'\n", argv[*i]));
+	if (!o->has_arg && val)
+		return (ft_bad_option(p->prog, "option '--%s' doesn't allow an argument\n",
+				o->name));
+	if (o->has_arg && !val && argv[*i + 1])
+		val = argv[++(*i)];
+	if (o->has_arg && !val)
+		return (ft_bad_option(p->prog, "option '--%s' requires an argument\n",
+				o->name));
+	return (ft_apply(p, o->id, val));
+}
+
+/* Short options, possibly grouped (-vn) or with an attached value (-s56). */
+static int	ft_parse_short(t_ping *p, char **argv, int *i)
+{
+	const char	*a;
+	const t_opt	*o;
+	char		bad[2];
+	int			ret = 0;
+
+	for (a = argv[*i] + 1; *a; a++)
 	{
-		fprintf(stderr, "%s: invalid option -- '%s'\n", argv[0], argv[*i] + 1);
-		fprintf(stderr, "Try '%s -?' for more information.\n", argv[0]);
-		return (-1);
+		for (o = g_opts; o->name; o++)
+			if (o->letter == *a)
+				break ;
+		bad[0] = *a;
+		bad[1] = '\0';
+		if (!o->name)
+			return (ft_bad_option(p->prog, "invalid option -- '%s'\n", bad));
+		if (!o->has_arg)
+			ret = ft_apply(p, o->id, NULL);
+		else if (a[1] || argv[*i + 1])
+			return (ft_apply(p, o->id, a[1] ? a + 1 : argv[++(*i)]));
+		else
+			return (ft_bad_option(p->prog, "option requires an argument -- '%s'\n",
+					bad));
+		if (ret != 0)
+			return (ret);
 	}
 	return (0);
 }
 
+/* Returns -1 on error, 0 if argv[*i] was an option, 1 if it is an operand. */
+static int	ft_parse_one(t_ping *p, char **argv, int *i, int opts)
+{
+	const char	*a = argv[*i];
+
+	if (!opts || a[0] != '-' || !a[1])
+		return (1);
+	if (a[1] == '-')
+		return (ft_parse_long(p, argv, i));
+	return (ft_parse_short(p, argv, i));
+}
+
+/* Options are consumed; the operands are compacted into p->hosts. */
 int	ft_parse_args(t_ping *p, int argc, char **argv)
 {
 	int	i;
+	int	opts = 1;
+	int	ret;
 
+	p->hosts = argv + 1;
 	for (i = 1; i < argc; i++)
 	{
-		if (argv[i][0] == '-' && argv[i][1] != '\0')
+		if (opts && !strcmp(argv[i], "--"))
 		{
-			if (ft_parse_option(p, argv, &i) != 0)
-				return (-1);
+			opts = 0;
+			continue ;
 		}
-		else if (!p->target)
-			p->target = argv[i];
+		ret = ft_parse_one(p, argv, &i, opts);
+		if (ret < 0)
+			return (-ret);
+		if (ret > 0)
+			p->hosts[p->nhosts++] = argv[i];
 	}
-	if (!p->target)
-	{
-		fprintf(stderr, "%s: missing host operand\n", argv[0]);
-		fprintf(stderr, "Try '%s -?' for more information.\n", argv[0]);
-		return (-1);
-	}
+	if (!p->nhosts)
+		return (-ft_bad_option(p->prog, "missing host operand\n", ""));
 	return (0);
 }
