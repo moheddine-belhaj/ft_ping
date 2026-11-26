@@ -9,7 +9,7 @@
 typedef enum e_opt_id
 {
 	OPT_VERBOSE, OPT_HELP, OPT_USAGE, OPT_TTL, OPT_NUMERIC,
-	OPT_TIMEOUT, OPT_LINGER, OPT_SIZE
+	OPT_TIMEOUT, OPT_LINGER, OPT_SIZE, OPT_TOS, OPT_PATTERN
 }	t_opt_id;
 
 typedef struct s_opt
@@ -29,6 +29,8 @@ static const t_opt	g_opts[] = {
 	{"timeout", 'w', 1, OPT_TIMEOUT},
 	{"linger", 'W', 1, OPT_LINGER},
 	{"size", 's', 1, OPT_SIZE},
+	{"tos", 'T', 1, OPT_TOS},
+	{"pattern", 'p', 1, OPT_PATTERN},
 	{NULL, 0, 0, 0}
 };
 
@@ -48,7 +50,7 @@ static int	ft_parse_num(const t_ping *p, const char *val, unsigned long max,
 	unsigned long	n;
 	char			*end;
 
-	n = strtoul(val, &end, 10);
+	n = strtoul(val, &end, 0);
 	if (*end)
 		fprintf(stderr, "%s: invalid value (`%s' near `%s')\n", p->prog, val, end);
 	else if (n < min)
@@ -68,6 +70,8 @@ static int	ft_set_num(t_ping *p, t_opt_id id, const char *val)
 		n = ft_parse_num(p, val, 255, 1);
 	else if (id == OPT_SIZE)
 		n = ft_parse_num(p, val, PING_MAX_DATA, 0);
+	else if (id == OPT_TOS)
+		n = ft_parse_num(p, val, 255, 0);
 	else
 		n = ft_parse_num(p, val, INT_MAX, 1);
 	if (n < 0)
@@ -76,10 +80,34 @@ static int	ft_set_num(t_ping *p, t_opt_id id, const char *val)
 		p->ttl = n;
 	else if (id == OPT_SIZE)
 		p->size = n;
+	else if (id == OPT_TOS)
+		p->tos = n;
 	else if (id == OPT_TIMEOUT)
 		p->timeout = n;
 	else
 		p->linger = n;
+	return (0);
+}
+
+/* -p: up to 16 hex bytes, read like inetutils does (sscanf "%2x"). */
+static int	ft_set_pattern(t_ping *p, const char *text)
+{
+	unsigned int	c;
+	int				off;
+	int				i;
+
+	for (i = 0; *text && i < PING_PATTERN_MAX; i++)
+	{
+		if (sscanf(text, "%2x%n", &c, &off) != 1)
+		{
+			fprintf(stderr, "%s: error in pattern near %s\n", p->prog, text);
+			return (-1);
+		}
+		text += off;
+		p->pattern[i] = (unsigned char)c;
+	}
+	p->pattern_len = i;
+	p->has_pattern = 1;
 	return (0);
 }
 
@@ -98,6 +126,8 @@ static int	ft_apply(t_ping *p, t_opt_id id, const char *val)
 			ft_print_short_usage(p->prog);
 		exit(0);
 	}
+	else if (id == OPT_PATTERN)
+		return (ft_set_pattern(p, val));
 	else
 		return (ft_set_num(p, id, val));
 	return (0);

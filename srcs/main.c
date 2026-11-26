@@ -28,6 +28,7 @@ int	main(int argc, char **argv)
 	p.prog = ft_prog_name(argv[0]);
 	p.ttl = PING_TTL_DEFAULT;
 	p.size = PING_DATA_LEN;
+	p.tos = -1;
 	p.id = getpid();
 	p.sockfd = -1;
 	status = ft_parse_args(&p, argc, argv);

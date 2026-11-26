@@ -19,6 +19,8 @@ int	ft_open_socket(t_ping *p)
 		return (-1);
 	}
 	if (setsockopt(p->sockfd, IPPROTO_IP, IP_TTL, &p->ttl, sizeof(p->ttl)) < 0
+		|| (p->tos >= 0 && setsockopt(p->sockfd, IPPROTO_IP, IP_TOS, &p->tos,
+				sizeof(p->tos)) < 0)
 		|| setsockopt(p->sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 	{
 		fprintf(stderr, "%s: setsockopt: %s\n", p->prog, strerror(errno));

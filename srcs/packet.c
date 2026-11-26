@@ -5,10 +5,20 @@
 #include <netinet/ip_icmp.h>
 #include "ft_ping.h"
 
+/* i-th filler byte: the -p pattern repeated, else 0, 1, 2... */
+static unsigned char	ft_fill_byte(const t_ping *p, size_t i)
+{
+	if (!p->has_pattern)
+		return ((unsigned char)i);
+	if (!p->pattern_len)
+		return (0);
+	return (p->pattern[i % p->pattern_len]);
+}
+
 /*
 ** Build an ICMP echo request in buf (PING_MAX_PACKET bytes, 8-byte aligned).
 ** Payload = send timestamp (struct timeval, only if it fits in -s bytes)
-** followed by an incrementing pattern.
+** followed by the filler (the data starts at the timestamp, or at byte 0).
 */
 size_t	ft_build_packet(t_ping *p, unsigned char *buf)
 {
@@ -17,6 +27,7 @@ size_t	ft_build_packet(t_ping *p, unsigned char *buf)
 	unsigned char	*payload = buf + PING_ICMP_HDR_LEN;
 	size_t			i;
 	size_t			total = PING_ICMP_HDR_LEN + p->size;
+	size_t			start = (size_t)p->size >= sizeof(now) ? sizeof(now) : 0;
 
 	memset(buf, 0, total);
 	icmp->type = ICMP_ECHO;
@@ -26,8 +37,8 @@ size_t	ft_build_packet(t_ping *p, unsigned char *buf)
 	gettimeofday(&now, NULL);
 	if ((size_t)p->size >= sizeof(now))
 		memcpy(payload, &now, sizeof(now));
-	for (i = sizeof(now); i < (size_t)p->size; i++)
-		payload[i] = (unsigned char)i;
+	for (i = start; i < (size_t)p->size; i++)
+		payload[i] = ft_fill_byte(p, i - start);
 	icmp->checksum = 0;
 	icmp->checksum = ft_checksum(buf, total);
 	return (total);

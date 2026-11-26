@@ -14,6 +14,7 @@
 # define PING_ICMP_HDR_LEN 8
 # define PING_PACKET_LEN (PING_ICMP_HDR_LEN + PING_DATA_LEN)
 # define PING_MAX_DATA  65399
+# define PING_PATTERN_MAX 16
 # define PING_MAX_PACKET 65536
 # define PING_RECV_BUF  65536
 
@@ -31,6 +32,10 @@ typedef struct s_ping
 	int					size;        /* ICMP data bytes (-s) */
 	int					timeout;     /* -w: stop after N seconds, 0 = never */
 	int					linger;      /* -W: accepted, only matters with a packet count */
+	int					tos;         /* -T: IP type of service, -1 = default */
+	int					has_pattern; /* -p given */
+	int					pattern_len;
+	unsigned char		pattern[PING_PATTERN_MAX];
 	int					numeric;     /* -n: accepted, we never reverse-resolve */
 	pid_t				id;          /* ICMP identifier (pid) */
 	unsigned short		seq;
