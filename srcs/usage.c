@@ -8,23 +8,28 @@ static const char	*g_help[] = {
 	"Send ICMP ECHO_REQUEST packets to network hosts.\n\n",
 	" Options valid for all request types:\n\n",
 	"  -n, --numeric              do not resolve host addresses\n",
+	"  -r, --ignore-routing       send directly to a host on an attached network\n",
 	"      --ttl=N                specify N as time-to-live\n",
 	"  -T, --tos=NUM              set type of service (TOS) to NUM\n",
 	"  -v, --verbose              verbose output\n",
 	"  -w, --timeout=N            stop after N seconds\n",
 	"  -W, --linger=N             number of seconds to wait for response\n\n",
 	" Options valid for --echo requests:\n\n",
+	"  -l, --preload=NUMBER       send NUMBER packets as fast as possible before\n",
+	"                             falling into normal mode of behavior (root only)\n",
 	"  -p, --pattern=PATTERN      fill ICMP packet with given pattern (hex)\n",
 	"  -s, --size=NUMBER          send NUMBER data octets\n\n",
 	"  -?, --help                 give this help list\n",
-	"      --usage                give a short usage message\n",
+	"      --usage                give a short usage message\n\n",
+	"Options marked with (root only) are available only to superuser.\n",
 	NULL
 };
 
 static const char	*g_short[] = {
-	"[-nv?]", "[-T NUM]", "[-w N]", "[-W N]", "[-p PATTERN]", "[-s NUMBER]",
-	"[--numeric]", "[--ttl=N]", "[--tos=NUM]", "[--verbose]", "[--timeout=N]",
-	"[--linger=N]", "[--pattern=PATTERN]", "[--size=NUMBER]", "[--help]",
+	"[-nrv?]", "[-T NUM]", "[-w N]", "[-W N]", "[-l NUMBER]", "[-p PATTERN]",
+	"[-s NUMBER]", "[--numeric]", "[--ignore-routing]", "[--ttl=N]",
+	"[--tos=NUM]", "[--verbose]", "[--timeout=N]", "[--linger=N]",
+	"[--preload=NUMBER]", "[--pattern=PATTERN]", "[--size=NUMBER]", "[--help]",
 	"[--usage]", "HOST ...",
 	NULL
 };

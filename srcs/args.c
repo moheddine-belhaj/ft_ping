@@ -9,7 +9,7 @@
 typedef enum e_opt_id
 {
 	OPT_VERBOSE, OPT_HELP, OPT_USAGE, OPT_TTL, OPT_NUMERIC,
-	OPT_TIMEOUT, OPT_LINGER, OPT_SIZE, OPT_TOS, OPT_PATTERN
+	OPT_TIMEOUT, OPT_LINGER, OPT_SIZE, OPT_TOS, OPT_PATTERN, OPT_ROUTING, OPT_PRELOAD
 }	t_opt_id;
 
 typedef struct s_opt
@@ -31,6 +31,8 @@ static const t_opt	g_opts[] = {
 	{"size", 's', 1, OPT_SIZE},
 	{"tos", 'T', 1, OPT_TOS},
 	{"pattern", 'p', 1, OPT_PATTERN},
+	{"ignore-routing", 'r', 0, OPT_ROUTING},
+	{"preload", 'l', 1, OPT_PRELOAD},
 	{NULL, 0, 0, 0}
 };
 
@@ -111,6 +113,22 @@ static int	ft_set_pattern(t_ping *p, const char *text)
 	return (0);
 }
 
+/* -l: packets to send before the normal one-per-second mode, 0..INT_MAX. */
+static int	ft_set_preload(t_ping *p, const char *val)
+{
+	unsigned long	n;
+	char			*end;
+
+	n = strtoul(val, &end, 0);
+	if (*end || n > INT_MAX)
+	{
+		fprintf(stderr, "%s: invalid preload value (%s)\n", p->prog, val);
+		return (-1);
+	}
+	p->preload = (int)n;
+	return (0);
+}
+
 /* Applies one parsed option; val is NULL for options without argument. */
 static int	ft_apply(t_ping *p, t_opt_id id, const char *val)
 {
@@ -118,6 +136,10 @@ static int	ft_apply(t_ping *p, t_opt_id id, const char *val)
 		p->verbose = 1;
 	else if (id == OPT_NUMERIC)
 		p->numeric = 1;
+	else if (id == OPT_ROUTING)
+		p->dontroute = 1;
+	else if (id == OPT_PRELOAD)
+		return (ft_set_preload(p, val));
 	else if (id == OPT_HELP || id == OPT_USAGE)
 	{
 		if (id == OPT_HELP)

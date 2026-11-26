@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -18,7 +19,8 @@ static int	ft_send_echo(t_ping *p)
 	{
 		fflush(stdout);
 		fprintf(stderr, "%s: sending packet: %s\n", p->prog, strerror(errno));
-		return (-1);
+		close(p->sockfd);
+		exit(1);
 	}
 	p->sent++;
 	return (0);
@@ -59,6 +61,7 @@ int	ft_ping_loop(t_ping *p)
 {
 	struct timeval	deadline;
 	struct timeval	end;
+	int				i;
 
 	gettimeofday(&p->start, NULL);
 	end = p->start;
@@ -67,6 +70,8 @@ int	ft_ping_loop(t_ping *p)
 	if (p->verbose)
 		printf(", id 0x%04x = %u", (unsigned short)p->id, (unsigned short)p->id);
 	printf("\n");
+	for (i = 0; i < p->preload && !g_stop; i++)
+		ft_send_echo(p);
 	do
 	{
 		gettimeofday(&deadline, NULL);

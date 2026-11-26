@@ -36,6 +36,8 @@ typedef struct s_ping
 	int					has_pattern; /* -p given */
 	int					pattern_len;
 	unsigned char		pattern[PING_PATTERN_MAX];
+	int					dontroute;   /* -r: SO_DONTROUTE */
+	int					preload;     /* -l: packets sent back to back first */
 	int					numeric;     /* -n: accepted, we never reverse-resolve */
 	pid_t				id;          /* ICMP identifier (pid) */
 	unsigned short		seq;
